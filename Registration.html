@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> PhotoBoard - Registration</title>
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fce4ec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 360px;
+        }
+        .title {
+            color: #ad1457;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #e91e63;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .camera-emoji {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 16px;
+            color: #ad1457;
+            margin-bottom: 6px;
+        }
+        input {
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #f48fb1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #ad1457;
+        }
+        button {
+            background-color: #ad1457;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #880e4f;
+        }
+        #registration-result {
+            margin-top: 20px;
+            text-align: center;
+            color: #ad1457;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .login-link a {
+            color: #ad1457;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="camera-emoji">📸</div>
+        <h1 class="title">PhotoBoard</h1>
+        <h2 class="subtitle">Create your account</h2>
+        <form hx-post="/register" hx-target="#registration-result" hx-swap="innerHTML" hx-headers='{"Content-Type": "application/json"}'>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="Username" required>
+            
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="Email" required>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="Password" required>
+            
+            <button type="submit">Join the Community</button>
+        </form>
+        <div id="registration-result"></div>
+        <div class="login-link">
+            Already a member? <a href="Login.html">Log in</a>
+        </div>
+    </div>
+
+    
+    <script>
+        function clearMessages() {
+            document.getElementById('registration-result').innerHTML = '';
+        }
+
+        document.body.addEventListener('htmx:afterRequest', (event) => {
+            if (event.detail.xhr.status === 201) {
+                document.getElementById('registration-result').innerHTML = "User registered successfully!";
+            } else if (event.detail.xhr.status === 401) {
+                document.getElementById('registration-result').innerHTML = "Email already exists!";
+            } else if (event.detail.xhr.status === 400) {
+                document.getElementById('registration-result').innerHTML = "All fields are required.";
+            } else {
+                document.getElementById('registration-result').innerHTML = "An error occurred. Please try again.";
+            }
+        });
+    </script>
+</body>
+</html>
