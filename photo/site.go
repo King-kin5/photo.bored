@@ -24,7 +24,7 @@ type Photo struct {
 type Album struct{
 	ID    uuid.UUID
 	Name string
-	CreatedAt time.Time
+	Created_at time.Time
 	Photos  []Photo
 }
 func (m *Model) HandleUpload(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +198,7 @@ func (m *Model) HandleCreateAlbum(w http.ResponseWriter, r *http.Request) {
     album := &Album{
         ID:        uuid.New(),
         Name:      name,
-        CreatedAt: time.Now(),
+        Created_at: time.Now(),
     }
 
     err := m.store.Createalbum(album)
@@ -218,7 +218,6 @@ func (m *Model) HandleAddPhotoToAlbum(w http.ResponseWriter, r *http.Request) {
     }
     albumIDStr := r.FormValue("AlbumID")
     photoIDStr := r.FormValue("PhotoID")
-
     if albumIDStr == "" || photoIDStr == "" {
         http.Error(w, "Both AlbumID and PhotoID are required", http.StatusBadRequest)
         return
@@ -240,6 +239,3 @@ func (m *Model) HandleAddPhotoToAlbum(w http.ResponseWriter, r *http.Request) {
     }
     fmt.Fprintf(w, "Photo added to album successfully")
 }
-
-
- 

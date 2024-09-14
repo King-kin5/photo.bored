@@ -87,8 +87,8 @@ func (ps *Photostore) UpdateCaptionByFilename(filename, caption string) error {
     return err
 }
 func (s *Photostore) Createalbum(album *Album) error {
-	query := "INSERT INTO albums (ID,Name,CreatedAt) VALUES ($1,$2,$3) RETURNING id"
-	_, err := s.db.Exec(query, album.Name)
+	query := "INSERT INTO albums (ID,Name, Created_at) VALUES ($1,$2,$3) RETURNING id"
+	_, err := s.db.Exec(query,album.ID, album.Name,album.Created_at)
 	if err != nil {
 		log.Printf("Error creating Album: %v", err)	
 	}
@@ -97,15 +97,15 @@ func (s *Photostore) Createalbum(album *Album) error {
 }         
 //add an existing photo to an album 
 func (s *Photostore) AddPhotoToAlbum(albumID uuid.UUID, photoID uuid.UUID) error {
-	query := `INSERT INTO album_photos (album_id, photo_id) VALUES ($1, $2)`
-	_, err := s.db.Exec(query, albumID, photoID)
-	if err != nil {
-		log.Printf("Error adding photo to album: %v", err)
-		return err
-	}
-	return nil
+    // Correct table name from album_photos to album_photo
+    query := `INSERT INTO album_photo (album_id, photo_id) VALUES ($1, $2)`
+    _, err := s.db.Exec(query, albumID, photoID)
+    if err != nil {
+        log.Printf("Error adding photo to album: %v", err)
+        return err
+    }
+    return nil
 }
-
 
 
 
