@@ -1,15 +1,19 @@
 package user
+
 import (
 	"database/sql"
+	"fmt"
 	"log"
-  "fmt"
 )
+
 type UserStore struct {
 	db *sql.DB
 }
+
 func NewUserStore(db *sql.DB) *UserStore {
 	return &UserStore{db: db}
 }
+
 func (us *UserStore) CreateUser(user *User) error {
 	query := "INSERT INTO users (Username, Email, Password) VALUES ($1, $2, $3)"
 	_, err := us.db.Exec(query, user.Username, user.Email, user.Password)

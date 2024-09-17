@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,36 +53,39 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
         <h2>Upload an Image</h2>
-        <form id="upload-form" hx-post="/upload" hx-target="#uploaded-image" hx-swap="innerHTML" enctype="multipart/form-data">
+        <form id="upload-form" hx-post="/upload" hx-target="#uploaded-image" hx-swap="innerHTML"
+            enctype="multipart/form-data">
             <input type="file" name="image" required>
             <button type="submit" class="btn-pink">Upload</button>
         </form>
-    
+
         <div id="uploaded-image" class="image-container">
             <!-- Image will be displayed here after upload -->
         </div>
-    
+
         <div id="upload-error" class="error-message">
             <!-- Error messages will be displayed here -->
         </div>
     </div>
-    
+
     <script>
-        document.getElementById('upload-form').addEventListener('htmx:afterRequest', function(event) {
+        document.getElementById('upload-form').addEventListener('htmx:afterRequest', function (event) {
             const response = event.detail.xhr.responseText;
             const responseData = JSON.parse(response);
             const imageURL = responseData.imageURL;
             const imageContainer = document.getElementById('uploaded-image');
             imageContainer.innerHTML = `<img src="${imageURL}" alt="Uploaded Image">`;
         });
-    
-        document.getElementById('upload-form').addEventListener('htmx:error', function(event) {
+
+        document.getElementById('upload-form').addEventListener('htmx:error', function (event) {
             document.getElementById('upload-error').textContent = 'Failed to upload the image. Please try again.';
         });
     </script>
 </body>
+
 </html>

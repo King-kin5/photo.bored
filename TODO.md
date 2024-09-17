@@ -1,0 +1,34 @@
+- 👍user Registration
+- 👍database
+- 👍routes
+- 👍 image upload
+- 🔓 redo everything under pictures(basically restrctuting to be better)
+- 👍 ability to update caption
+- 👍 HandelDelete
+- 👍 Create a photo album
+- 🔓 update album
+- 🔓 download image
+- 🔓 share album
+- 🔓 share picture
+- 🔓 add friends
+- 🔓 remove friends
+- 🔓 comment on picture
+- 🔓 react to picture
+- 🔓 deactive acciunt
+- 🔓 log out of account
+- 🔓 add profile picture
+- 🔓 user session😪😪
+- 🔓 security
+
+---
+# TEST
+- ability to update caption
+- HandelDelete
+- Create a photo album
+## DONE
+- user Registration
+- database
+- routes
+- image upload
+- *INTERFACETESTING*
+- user Registration

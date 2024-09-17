@@ -1,4 +1,5 @@
 package photo
+
 type Model struct {
 	store *Photostore
 }

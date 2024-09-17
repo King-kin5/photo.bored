@@ -1,10 +1,13 @@
 package user
-import(
+
+import (
 	"database/sql"
 	"fmt"
 	"sync"
-	_"github.com/lib/pq"
+
+	_ "github.com/lib/pq"
 )
+
 var dbInstance *sql.DB
 var dbInstanceError error
 var dbOnce sync.Once
@@ -41,7 +44,7 @@ func GetPostgresDB() (*sql.DB, error) {
 }
 
 func createSchema(db *sql.DB) error {
-    query := `
+	query := `
     CREATE TABLE IF NOT EXISTS users (
         ID UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         Username TEXT NOT NULL,
@@ -68,6 +71,6 @@ func createSchema(db *sql.DB) error {
         FOREIGN KEY (photo_id) REFERENCES photos(id) ON DELETE CASCADE
 	);
     `
-    _, err := db.Exec(query)
-    return err
+	_, err := db.Exec(query)
+	return err
 }
