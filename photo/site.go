@@ -209,7 +209,6 @@ func (m *Model) HandleCreateAlbum(w http.ResponseWriter, r *http.Request) {
 
     fmt.Fprintf(w, "Album created successfully with ID: %s", album.ID)
 }
-
 //Add Existing Photo to Album Function
 func (m *Model) HandleAddPhotoToAlbum(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
@@ -239,3 +238,31 @@ func (m *Model) HandleAddPhotoToAlbum(w http.ResponseWriter, r *http.Request) {
     }
     fmt.Fprintf(w, "Photo added to album successfully")
 }
+func (m *Model) HandleGetAlbumWithPhotos(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodGet {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+    albumIDStr := r.URL.Query().Get("AlbumID")
+    if albumIDStr == "" {
+        http.Error(w, "AlbumID is required", http.StatusBadRequest)
+        return
+    }
+    albumID, err := uuid.Parse(albumIDStr)
+    if err != nil {
+        http.Error(w, "Invalid AlbumID", http.StatusBadRequest)
+        return
+    }
+    album, err := m.store.GetAlbumWithPhotos(albumID)
+    if err != nil {
+        http.Error(w, "Failed to retrieve album and photos", http.StatusInternalServerError)
+        return
+    }
+    for i := range album.Photos {
+        album.Photos[i].Data = nil
+        album.Photos[i].Location = fmt.Sprintf("/serveimage/%s", album.Photos[i].Filename)
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(album)
+}
+

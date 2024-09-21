@@ -55,6 +55,7 @@ http.HandleFunc("/photo", func(w http.ResponseWriter, r *http.Request) {
     http.HandleFunc("/serveimage/", photoModel.HandleServeImage)
     http.HandleFunc("/create_album", photoModel.HandleCreateAlbum)
     http.HandleFunc("/add_photo_to_album", photoModel.HandleAddPhotoToAlbum)
+    http.HandleFunc("/get_photo_to_album",photoModel.HandleGetAlbumWithPhotos)
 
     // User-related routes
     http.HandleFunc("/register", userModel.RegisterUser)

@@ -1,11 +1,4 @@
-- 👍user Registration
-- 👍database
-- 👍routes
-- 👍 image upload
-- 🔓 redo everything under pictures(basically restrctuting to be better)
--- 👍  ability to update caption
--  👍HandelDelete
--👍 Create a photo album
+  👍HandelDelete
 - 🔓update album
 - 🔓 download image
 - 🔓 share album
@@ -19,6 +12,20 @@
 - 🔓 add profile picture
 - 🔓 user session😪😪
 - 🔓 security
+ 🔓 Follow System
+ 🔓 Commenting and Liking
+ 🔓Search Functionality
+ 🔓Responsive Design
+ 🔓Accessibility Features. Implement accessibility features, such as alt text for images, to ensure that your website is usable by everyone.
+ 🔓Image of the Day/Week/Month. Feature a selected image on the homepage, with a brief description and credit to the photographer.
+ 🔓Collaborative Galleries.Enable users to create collaborative galleries, where multiple users can contribute images to a single gallery.
+ 🔓Image Recommendations
+ 🔓Gamification. Implement gamification elements, such as badges, points, or leaderboards, to encourage users to engage with the platform and share their images.
+ 🔓Image Editing Tools.Integrate basic image editing tools, such as cropping, resizing, and filters, to allow users to edit their images directly on the platform.
+ 🔓Personalized Image Feedsoushh
+ 🔓
+ 🔓
+ 
 
 $$$$$$ TEST $$$$$$$$$
 ability to update caption
@@ -29,5 +36,6 @@ Create a photo album
 database
 routes
 image upload
+ Create a photo album
  ***** INTERFACETESTING *********
 user Registration

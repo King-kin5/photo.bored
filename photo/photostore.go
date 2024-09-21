@@ -106,6 +106,35 @@ func (s *Photostore) AddPhotoToAlbum(albumID uuid.UUID, photoID uuid.UUID) error
     }
     return nil
 }
-
-
-
+func (s *Photostore) GetAlbumWithPhotos(albumID uuid.UUID) (*Album, error) {
+    // Query to get album details
+    albumQuery := `SELECT id, name, created_at FROM albums WHERE id = $1`
+    var album Album
+    err := s.db.QueryRow(albumQuery, albumID).Scan(&album.ID, &album.Name, &album.Created_at)
+    if err != nil {
+        log.Printf("Error retrieving album: %v", err)
+        return nil, err
+    }
+    // Query to get photos associated with the album
+    photoQuery := `
+        SELECT p.photo_id, p.filename, p.data, p.date, p.location 
+        FROM photos p 
+        INNER JOIN album_photo ap ON p.photo_id = ap.photo_id 
+        WHERE ap.album_id = $1`
+    
+    rows, err := s.db.Query(photoQuery, albumID)
+    if err != nil {
+        log.Printf("Error retrieving photos for album: %v", err)
+        return nil, err
+    }
+    defer rows.Close()
+    for rows.Next() {
+        var photo Photo
+        if err := rows.Scan(&photo.photo_id, &photo.Filename, &photo.Data, &photo.Date, &photo.Location); err != nil {
+            log.Printf("Error scanning photo: %v", err)
+            return nil, err
+        }
+        album.Photos = append(album.Photos, photo)
+    }
+    return &album, nil
+}
