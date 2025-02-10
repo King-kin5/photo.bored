@@ -1,0 +1,19 @@
+wip image bloging platform
+
+# how to build
+
+go build
+./app
+
+#  goals
+- list for similar images eg cats, cafe, photography
+- basic ass ui
+- non cluttered ui
+- try to be like og instagram
+- easy to self host?
+- free forever
+
+
+#  antigoals
+- distractive
+- ads

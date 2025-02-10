@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoShare Feed</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ... existing CSS remains the same ... */
+        :root {
+            --primary-color: #1DA1F2;
+            --secondary-color: #657786;
+            --background-color: #F5F8FA;
+            --border-color: #E1E8ED;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: #14171A;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-container {
+            max-width: 600px;
+            margin: 70px auto 20px;
+            padding: 0 1rem;
+        }
+
+        .feed-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .feed-header {
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+        }
+
+        .user-info {
+            flex-grow: 1;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #14171A;
+        }
+
+        .post-time {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+
+        .feed-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+        }
+
+        .feed-actions {
+            padding: 0.8rem 1rem;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .action-button {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .action-button:hover {
+            color: var(--primary-color);
+        }
+
+        .caption {
+            padding: 0 1rem 1rem;
+            color: #14171A;
+        }
+
+        .create-post {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary-color);
+            color: white;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(29,161,242,0.3);
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        .create-post:hover {
+            transform: scale(1.1);
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .intersection-observer {
+            height: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .main-container {
+                margin-top: 60px;
+            }
+        }
+    </style>
+   
+</head>
+<body>
+    <nav class="navbar">
+        <h1>PhotoShare</h1>
+        <div class="nav-actions">
+            <button class="action-button" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div id="feed-container">
+            <!-- Feed items will be dynamically inserted here -->
+        </div>
+        <div class="loading-spinner" id="loading-spinner">
+            <i class="fas fa-circle-notch fa-spin"></i>
+            Loading more posts...
+        </div>
+        <div class="intersection-observer" id="intersection-observer"></div>
+    </div>
+
+    <button class="create-post" id="upload-btn">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    {{/* Add this to make the template valid for Go's template engine */}}
+    <script>
+        // Placeholder for any Go-specific template variables if needed
+        var initialData = "{{if .InitialData}}{{.InitialData}}{{else}}null{{end}}";
+    </script>
+
+    <script>
+        // Main client-side script (minimal changes from original)
+        let page = 1;
+        let loading = false;
+        let hasMore = true;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !loading && hasMore) {
+                loadMorePosts();
+            }
+        }, { threshold: 0.1 });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = '/login_page';
+                return;
+            }
+
+            loadInitialPosts();
+            observer.observe(document.getElementById('intersection-observer'));
+            setupWebSocket();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('upload-btn').addEventListener('click', handleUploadClick);
+
+        function setupWebSocket() {
+            const ws = new WebSocket(`ws://${window.location.host}/ws/feed`);
+            
+            ws.onmessage = (event) => {
+                const newPost = JSON.parse(event.data);
+                prependPost(newPost);
+            };
+
+            ws.onclose = () => {
+                setTimeout(setupWebSocket, 3000);
+            };
+        }
+
+        // Rest of the script remains the same as in the original Feed.html
+        async function loadInitialPosts() {
+            page = 1;
+            const posts = await fetchPosts(page);
+            document.getElementById('feed-container').innerHTML = '';
+            posts.forEach(post => appendPost(post));
+        }
+
+        async function loadMorePosts() {
+            if (loading || !hasMore) return;
+            
+            loading = true;
+            document.getElementById('loading-spinner').style.display = 'block';
+            
+            const posts = await fetchPosts(++page);
+            posts.forEach(post => appendPost(post));
+            
+            loading = false;
+            document.getElementById('loading-spinner').style.display = 'none';
+            
+            if (posts.length < 10) {
+                hasMore = false;
+            }
+        }
+
+        async function fetchPosts(page) {
+            const token = localStorage.getItem('accessToken');
+            try {
+                const response = await fetch(`/api/feed?page=${page}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login_page';
+                    return [];
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+                return [];
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+            });
+        }
+
+        function appendPost(post) {
+            const postElement = createPostElement(post);
+            document.getElementById('feed-container').appendChild(postElement);
+        }
+
+        function prependPost(post) {
+            const postElement = createPostElement(post);
+            document.getElementById('feed-container').prepend(postElement);
+        }
+
+        function createPostElement(post) {
+            const div = document.createElement('div');
+            div.className = 'feed-item';
+            div.innerHTML = `
+                <div class="feed-header">
+                    <div class="user-avatar"></div>
+                    <div class="user-info">
+                        <div class="username">${post.username || 'Unknown User'}</div>
+                        <div class="post-time">${formatDate(post.date || new Date())}</div>
+                    </div>
+                </div>
+                <img src="/serveimage/${post.filename}" alt="Post" class="feed-image">
+                <div class="feed-actions">
+                    <button class="action-button" onclick="likePost('${post.photo_id}')">
+                        <i class="far fa-heart"></i>
+                        <span>Like</span>
+                    </button>
+                    <button class="action-button" onclick="showComments('${post.photo_id}')">
+                        <i class="far fa-comment"></i>
+                        <span>Comment</span>
+                    </button>
+                    <button class="action-button" onclick="sharePost('${post.photo_id}')">
+                        <i class="far fa-share-square"></i>
+                        <span>Share</span>
+                    </button>
+                </div>
+                ${post.caption ? `<div class="caption">${post.caption}</div>` : ''}
+            `;
+            return div;
+        }
+
+        function handleUploadClick() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = '/login_page';
+                return;
+            }
+            window.location.href = '/api/photo';
+        }
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login_page';
+        }
+
+        function likePost(photoId) {
+            console.log('Like post:', photoId);
+        }
+
+        function showComments(photoId) {
+            console.log('Show comments:', photoId);
+        }
+
+        function sharePost(photoId) {
+            console.log('Share post:', photoId);
+        }
+    </script>
+</body>
+</html>
