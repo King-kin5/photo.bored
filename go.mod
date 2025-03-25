@@ -1,6 +1,6 @@
 module app
 
-go 1.21.5
+go 1.24.1
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -20,7 +20,7 @@ require (
 
 require (
 	github.com/disintegration/imaging v1.6.2
-	github.com/go-playground/validator/v10 v10.24.0
+	github.com/go-playground/validator/v10 v10.25.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
