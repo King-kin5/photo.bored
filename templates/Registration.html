@@ -1,35 +1,24 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PhotoBoard - Registration</title>
-    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-    <!-- Previous styles remain the same -->
-    <style>
-        /* Keep existing styles */
-    </style>
+    <title>Sign Up - PhotoBored</title>
+    <link rel="stylesheet" href="/static/main.css">
 </head>
 <body>
-    <div class="container">
-        <div class="camera-emoji">📸</div>
-        <h1 class="title">PhotoBoard</h1>
-        <h2 class="subtitle">Create your account</h2>
-        <form id="registrationForm">
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
-            
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-            
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-            
-            <button type="submit">Join the Community</button>
-        </form>
-        <div id="registration-result"></div>
-        <div class="login-link">
-            Already a member? <a href="/login_page">Log in</a>
+    <div class="auth-container">
+        <div class="auth-form">
+            <h1>PhotoBored</h1>
+            <form id="registrationForm">
+                <input type="text" id="username" name="username" placeholder="Username" required>
+                <input type="email" id="email" name="email" placeholder="Email" required>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+                <button type="submit">Sign Up</button>
+            </form>
+            <div id="registration-result"></div>
+            <p>Already have an account? <a href="/login_page">Log in</a></p>
         </div>
     </div>
 
@@ -55,18 +44,11 @@
                 const data = await response.json();
 
                 if (response.status === 201) {
-                    document.getElementById('registration-result').innerHTML = "Registration successful! Redirecting to feed...";
-                    
-                    // Store the tokens just like in login
                     if (data.tokens) {
                         localStorage.setItem('accessToken', data.tokens.access_token);
                         localStorage.setItem('refreshToken', data.tokens.refresh_token);
                     }
-
-                    // Redirect to feed page
-                    setTimeout(() => {
-                        window.location.href = '/feed';
-                    }, 1000);
+                    window.location.href = '/feed';
                 } else {
                     document.getElementById('registration-result').innerHTML = data.message || "Registration failed. Please try again.";
                 }

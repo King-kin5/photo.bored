@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roll - PhotoBored</title>
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        .roll-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .roll-item {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .roll-item img {
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/feed" class="logo">PhotoBored</a>
+            <div class="nav-links">
+                <a href="/feed">Feed</a>
+                <a href="/photo">Upload</a>
+                <a href="#" id="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="roll-container" id="roll-container">
+            <!-- Roll items will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = '/login_page';
+                return;
+            }
+
+            // Fetch and display roll content
+            // For now, it's just a placeholder
+            const rollContainer = document.getElementById('roll-container');
+            for (let i = 0; i < 5; i++) {
+                const rollItem = document.createElement('div');
+                rollItem.className = 'roll-item';
+                rollItem.innerHTML = `<img src="https://picsum.photos/400/600?random=${i}" alt="Roll Item">`;
+                rollContainer.appendChild(rollItem);
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login_page';
+        });
+    </script>
+</body>
+</html>

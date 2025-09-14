@@ -1,43 +1,33 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Images - PhotoBoard</title>
-    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-    <style>
-        /* Previous CSS styles remain the same */
-        /* ... (keep all existing styles) ... */
-    </style>
+    <title>Upload - PhotoBored</title>
+    <link rel="stylesheet" href="/static/main.css">
 </head>
 <body>
     <div class="container">
-        <h2 style="margin-bottom: 10px;">Upload Images</h2>
-        
-        <div class="upload-icon" id="file-upload-icon" onmouseover="showTooltip('Select Images')" onmouseout="hideTooltip()">
-            +
-            <span class="tooltip" id="tooltip-text">Select Images</span>
-        </div>
-        <input type="file" id="file-upload" class="file-input" accept="image/*" multiple onchange="handleFileSelect(this)">
-
-        <div id="preview-container" class="image-grid">
-            <!-- Image previews will be shown here -->
+        <div class="header">
+            <a href="/feed" class="logo">PhotoBored</a>
+            <div class="nav-links">
+                <a href="/feed">Feed</a>
+                <a href="#" id="logout-btn">Logout</a>
+            </div>
         </div>
 
-        <button type="submit" class="upload-icon" onclick="uploadImages()" onmouseover="showTooltip('Upload Images')" onmouseout="hideTooltip()">
-            ⬆
-            <span class="tooltip" id="tooltip-text-upload">Upload Images</span>
-        </button>
-
-        <div class="upload-progress">
-            <div class="progress-bar"></div>
+        <div class="upload-container">
+            <div class="upload-area" id="upload-area">
+                <p>Drag & drop images here, or click to select files</p>
+                <input type="file" id="file-upload" multiple accept="image/*" style="display: none;">
+            </div>
+            <div class="preview-container" id="preview-container"></div>
+            <button id="upload-button">Upload</button>
         </div>
-
-        <div id="upload-error" class="error-message"></div>
     </div>
 
     <script>
-        // Check for authentication on page load
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('accessToken');
             if (!token) {
@@ -45,49 +35,63 @@
             }
         });
 
+        const uploadArea = document.getElementById('upload-area');
+        const fileUpload = document.getElementById('file-upload');
+        const previewContainer = document.getElementById('preview-container');
+        const uploadButton = document.getElementById('upload-button');
         let selectedFiles = [];
 
-        function showTooltip(message) {
-            const tooltip = document.getElementById('tooltip-text');
-            tooltip.textContent = message;
-            tooltip.classList.add('show');
-        }
+        uploadArea.addEventListener('click', () => fileUpload.click());
 
-        function hideTooltip() {
-            document.getElementById('tooltip-text').classList.remove('show');
-        }
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary-color)';
+        });
 
-        function handleFileSelect(input) {
-            if (input.files) {
-                for (let file of input.files) {
-                    if (file.type.startsWith('image/')) {
-                        selectedFiles.push(file);
-                        displayPreview(file);
-                    }
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'var(--accent-color)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--accent-color)';
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        fileUpload.addEventListener('change', () => {
+            const files = fileUpload.files;
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            for (const file of files) {
+                if (file.type.startsWith('image/')) {
+                    selectedFiles.push(file);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'preview-item';
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" alt="${file.name}">
+                            <button class="remove-preview" data-filename="${file.name}">X</button>
+                        `;
+                        previewContainer.appendChild(previewItem);
+                    };
+                    reader.readAsDataURL(file);
                 }
             }
         }
 
-        function displayPreview(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'preview-group';
-                previewDiv.innerHTML = `
-                    <img src="${e.target.result}" class="preview-image" alt="Preview">
-                    <button type="button" class="remove-preview" onclick="removePreview(this, '${file.name}')">×</button>
-                `;
-                document.getElementById('preview-container').appendChild(previewDiv);
+        previewContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-preview')) {
+                const filename = e.target.dataset.filename;
+                selectedFiles = selectedFiles.filter(file => file.name !== filename);
+                e.target.parentElement.remove();
             }
-            reader.readAsDataURL(file);
-        }
+        });
 
-        function removePreview(button, fileName) {
-            button.parentElement.remove();
-            selectedFiles = selectedFiles.filter(file => file.name !== fileName);
-        }
-
-        async function uploadImages() {
+        uploadButton.addEventListener('click', async () => {
             const token = localStorage.getItem('accessToken');
             if (!token) {
                 window.location.href = '/login_page';
@@ -96,11 +100,6 @@
 
             const formData = new FormData();
             selectedFiles.forEach(file => formData.append('images[]', file));
-
-            const progressContainer = document.querySelector('.upload-progress');
-            const progressBar = document.querySelector('.progress-bar');
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
 
             try {
                 const response = await fetch('/api/upload', {
@@ -112,24 +111,20 @@
                 });
 
                 if (response.ok) {
-                    document.getElementById('preview-container').innerHTML = '';
-                    selectedFiles = [];
-                    progressContainer.style.display = 'none';
-                    alert('Images uploaded successfully!');
-                } else if (response.status === 401) {
-                    // Token expired or invalid
-                    localStorage.removeItem('accessToken');
-                    window.location.href = '/login_page';
+                    window.location.href = '/feed';
                 } else {
-                    throw new Error('Upload failed');
+                    alert('Upload failed');
                 }
             } catch (error) {
-                document.getElementById('upload-error').textContent = 'Failed to upload images. Please try again.';
-                progressContainer.style.display = 'none';
+                console.error('Upload error:', error);
+                alert('An error occurred during upload');
             }
+        });
 
-            progressBar.style.width = '100%';
-        }
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login_page';
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,39 @@
+FROM golang:1.23-alpine
+
+WORKDIR /app
+
+# Update package index and upgrade existing packages
+RUN apk update && apk upgrade --no-cache
+
+# Install build dependencies
+RUN apk add --no-cache \
+    git \
+    gcc \
+    musl-dev \
+    ca-certificates
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S -D -H -u 1001 -s /sbin/nologin -G appgroup appuser
+
+# Install air for hot reloading
+RUN go install github.com/cosmtrek/air@latest
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+# Copy the rest of the application
+COPY . .
+
+# Change ownership to non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose ports
+EXPOSE 8080 1935
+
+# Start air for hot reloading
+CMD ["air", "-c", ".air.toml"]
