@@ -540,6 +540,41 @@ func (h *Handler) validateUsername(username string) error {
 
 	return nil
 }
+func (h *Handler) GetCurrentUser(c echo.Context) error {
+	userID, ok := c.Get("user_id").(uuid.UUID)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			Error:   "User not authenticated",
+			Code:    "MISSING_USER_CONTEXT",
+			Details: "No valid user session found",
+		})
+	}
+
+	user, err := h.userstore.GetUserByID(userID.String())
+	if err != nil {
+		utils.Logger.Errorf("Error fetching current user: %v", err)
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "Failed to fetch user profile",
+			Code:    "DATABASE_ERROR",
+			Details: "Unable to retrieve user information",
+		})
+	}
+
+	if user == nil {
+		return c.JSON(http.StatusNotFound, ErrorResponse{
+			Error:   "User not found",
+			Code:    "USER_NOT_FOUND",
+			Details: "User account no longer exists",
+		})
+	}
+
+	return c.JSON(http.StatusOK, SuccessResponse{
+		Message: "User profile retrieved successfully",
+		Data: map[string]interface{}{
+			"user": user.PrivateUser(),
+		},
+	})
+}
 
 func (h *Handler) validateEmail(email string) error {
 	if !isValidEmail(email) {

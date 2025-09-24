@@ -1,0 +1,61 @@
+{"level":"info","msg":"Request completed: GET /photo - 200 in 126.953ms","time":"20013-920-70 2020:08:13"}
+{"level":"info","msg":"WebSocket client disconnected. Total clients: 0","time":"20013-920-70 2020:08:13"}
+{"level":"info","msg":"Request started: GET /api/user/profile from ::1","time":"20014-920-70 2020:08:14"}
+{"time":"2025-09-20T19:08:14.1296041+01:00","id":"41ae63ce-420d-40b2-8a4a-d221d2bbc68e","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/user/profile","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":200,"error":"","latency":6094500,"latency_human":"6.0945ms","bytes_in":0,"bytes_out":251}
+{"level":"info","msg":"Request completed: GET /api/user/profile - 200 in 9.2178ms","time":"20014-920-70 2020:08:14"}
+{"level":"info","msg":"Request started: POST /api/upload from ::1","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Upload attempt from user: anonymous, IP: ::1","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Upload endpoint accessed","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Processing upload for user: 098557fe-6ab7-4964-98d7-26cd4a7a1203","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Upload handler called","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Upload request from user: 098557fe-6ab7-4964-98d7-26cd4a7a1203","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Found files in 'images[]' field","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Processing file 1/3: Capture.PNG (size: 18065 bytes)","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Detected MIME type: image/png for file: Capture.PNG","time":"20031-920-70 2020:08:31"}
+{"level":"info","msg":"Attempting to save image to database: c2b18f36-1ee0-4ede-a83f-53ecc5dd40fb_Capture.PNG","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Successfully saved image: c2b18f36-1ee0-4ede-a83f-53ecc5dd40fb_Capture.PNG","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"New photo broadcasted to WebSocket clients for real-time feed updates","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Processing file 2/3: Screenshot 2025-09-15 025637.png (size: 187374 bytes)","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Detected MIME type: image/png for file: Screenshot 2025-09-15 025637.png","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Attempting to save image to database: 37428a74-f30c-433a-998b-f45ecb224d9b_Screenshot 2025-09-15 025637.png","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Successfully saved image: 37428a74-f30c-433a-998b-f45ecb224d9b_Screenshot 2025-09-15 025637.png","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"New photo broadcasted to WebSocket clients for real-time feed updates","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Processing file 3/3: Screenshot 2025-09-16 020338.png (size: 54257 bytes)","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Detected MIME type: image/png for file: Screenshot 2025-09-16 020338.png","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Attempting to save image to database: 6b8d9ad5-c7e9-409e-ac5f-99a588b74c00_Screenshot 2025-09-16 020338.png","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Successfully saved image: 6b8d9ad5-c7e9-409e-ac5f-99a588b74c00_Screenshot 2025-09-16 020338.png","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"New photo broadcasted to WebSocket clients for real-time feed updates","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Upload completed successfully: 3/3 files","time":"20032-920-70 2020:08:32"}
+{"time":"2025-09-20T19:08:32.8586396+01:00","id":"0c1f5b0b-2f42-4f25-b7b4-c71b97288e7a","remote_ip":"::1","host":"localhost:8080","method":"POST","uri":"/api/upload","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":200,"error":"","latency":924915900,"latency_human":"924.9159ms","bytes_in":260214,"bytes_out":302}
+{"level":"info","msg":"Request completed: POST /api/upload - 200 in 933.9319ms","time":"20032-920-70 2020:08:32"}
+{"level":"info","msg":"Request started: GET /feed from ::1","time":"20032-920-70 2020:08:32"}
+{"time":"2025-09-20T19:08:32.9782909+01:00","id":"4ce75cc9-e09b-4efa-a53b-da4a59673cd6","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/feed","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":200,"error":"","latency":1557800,"latency_human":"1.5578ms","bytes_in":0,"bytes_out":7470}
+{"level":"info","msg":"Request completed: GET /feed - 200 in 35.2537ms","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"Request started: GET /static/feed.js from ::1","time":"20033-920-70 2020:08:33"}
+{"time":"2025-09-20T19:08:33.0379837+01:00","id":"dbeeb21e-0575-4960-861f-0d1fafccdff5","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/static/feed.js","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":304,"error":"","latency":2623000,"latency_human":"2.623ms","bytes_in":0,"bytes_out":0}
+{"level":"info","msg":"Request completed: GET /static/feed.js - 304 in 4.4172ms","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"Request started: GET /api/user/profile from ::1","time":"20033-920-70 2020:08:33"}
+{"time":"2025-09-20T19:08:33.3047988+01:00","id":"0610cf1f-7401-4706-84d0-1095ab76f35f","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/user/profile","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":200,"error":"","latency":2572400,"latency_human":"2.5724ms","bytes_in":0,"bytes_out":251}
+{"level":"info","msg":"Request completed: GET /api/user/profile - 200 in 3.9326ms","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"Request started: GET /api/feed/infinite?feed_type=combined\u0026limit=20\u0026personalized=true from ::1","time":"20033-920-70 2020:08:33"}
+2025/09/20 19:08:33 Error querying infinite scroll photos: pq: column u.user_id does not exist
+{"level":"error","msg":"Error fetching infinite scroll feed: pq: column u.user_id does not exist","time":"20033-920-70 2020:08:33"}
+{"time":"2025-09-20T19:08:33.3288453+01:00","id":"e5eb1764-d69d-47ee-b040-8fd0dfd8b861","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/api/feed/infinite?feed_type=combined&limit=20&personalized=true","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":500,"error":"","latency":13308000,"latency_human":"13.308ms","bytes_in":0,"bytes_out":32}
+{"level":"info","msg":"Request completed: GET /api/feed/infinite?feed_type=combined\u0026limit=20\u0026personalized=true - 500 in 16.9559ms","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"Request started: GET /ws/feed from ::1","time":"20033-920-70 2020:08:33"}
+{"time":"2025-09-20T19:08:33.351109+01:00","id":"1714391a-d72b-44d7-aad0-621fcd3fd698","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/ws/feed","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":200,"error":"","latency":0,"latency_human":"0s","bytes_in":0,"bytes_out":0}
+{"level":"info","msg":"New WebSocket client connected. Total clients: 1","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"Request completed: GET /ws/feed - 200 in 42.8903ms","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"Request started: GET /serveimage/undefined from ::1","time":"20033-920-70 2020:08:33"}
+{"level":"error","msg":"Image not found: undefined, error: sql: no rows in result set","time":"20033-920-70 2020:08:33"}
+{"time":"2025-09-20T19:08:33.5365951+01:00","id":"824e077f-509c-4a79-82d4-ac494d75ac74","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/serveimage/undefined","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":404,"error":"","latency":2673300,"latency_human":"2.6733ms","bytes_in":0,"bytes_out":15}
+{"level":"info","msg":"Request completed: GET /serveimage/undefined - 404 in 4.3884ms","time":"20033-920-70 2020:08:33"}
+{"level":"info","msg":"WebSocket client disconnected. Total clients: 0","time":"20033-920-70 2020:09:33"}
+{"level":"info","msg":"Request started: GET /ws/feed from ::1","time":"20036-920-70 2020:09:36"}
+{"time":"2025-09-20T19:09:36.9248241+01:00","id":"02567623-c930-4a6d-9748-315a2792d0e2","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/ws/feed","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":200,"error":"","latency":770500,"latency_human":"770.5µs","bytes_in":0,"bytes_out":0}
+{"level":"info","msg":"New WebSocket client connected. Total clients: 1","time":"20036-920-70 2020:09:36"}
+{"level":"info","msg":"Request completed: GET /ws/feed - 200 in 2.1572ms","time":"20036-920-70 2020:09:36"}
+{"level":"info","msg":"Request started: GET /serveimage/undefined from ::1","time":"20036-920-70 2020:09:36"}
+{"level":"error","msg":"Image not found: undefined, error: sql: no rows in result set","time":"20036-920-70 2020:09:36"}
+{"time":"2025-09-20T19:09:36.9413018+01:00","id":"d1573ba1-901d-46c5-bf6c-1f4219589360","remote_ip":"::1","host":"localhost:8080","method":"GET","uri":"/serveimage/undefined","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","status":404,"error":"","latency":2226500,"latency_human":"2.2265ms","bytes_in":0,"bytes_out":15}
+{"level":"info","msg":"Request completed: GET /serveimage/undefined - 404 in 4.2222ms","time":"20036-920-70 2020:09:36"}

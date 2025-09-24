@@ -154,31 +154,26 @@ func LoggingMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-// AuthenticationMiddleware checks JWT from cookies, skips excluded paths, sets user context
+
+// AuthenticationMiddleware - FIXED version with correct excluded paths
 func AuthenticationMiddleware(config *Config, db *sql.DB) echo.MiddlewareFunc {
 	tokenManager := NewTokenManager(config, db)
 
-	// Production-ready excluded paths
+	// Updated excluded paths to match your actual routes
 	excludedPaths := []string{
-		"/api/v1/auth/login",
-		"/api/v1/auth/register",
-		"/api/v1/auth/forgot-password",
-		"/api/v1/auth/reset-password",
-		"/api/v1/auth/verify-email",
-		"/api/v1/auth/refresh-token",
-		"/api/v1/auth/logout",
-		"/api/v1/auth/google-login",
-		"/api/v1/auth/google-callback",
+		"/api/register",
+		"/api/login",
+		"/api/feed",        // Make feed data public
 		"/health",
-		"/metrics",
-		"/docs",
-		"/swagger",
-		"/openapi.json",
+		"/static/",
+		"/serveimage/",     // Make image serving public
+		"/registration",
+		"/login_page",
+		"/feed",           // Template routes (HTML pages)
+		
+		"/ws/",            // WebSocket routes
 		"/favicon.ico",
 		"/robots.txt",
-		"/static/",
-		"/public/",
-		"/.well-known/",
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -198,41 +193,59 @@ func AuthenticationMiddleware(config *Config, db *sql.DB) echo.MiddlewareFunc {
 				}
 			}
 
-			// First try to get token from cookie
-			token := GetAccessTokenFromCookie(c)
+			utils.Logger.Debugf("Auth middleware checking path: %s", path)
 
-			// Fallback to Authorization header for API clients
+			// FIXED: First try to get token from cookie (primary method)
+			token := GetAccessTokenFromCookie(c)
+			
+			// Fallback to Authorization header for API clients (keep for compatibility)
 			if token == "" {
 				authHeader := req.Header.Get("Authorization")
-				if authHeader != "" {
+				if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
 					token = strings.TrimPrefix(authHeader, "Bearer ")
-					if token == authHeader {
-						return echo.NewHTTPError(http.StatusUnauthorized, "Invalid authorization header format")
-					}
+					utils.Logger.Debug("Using token from Authorization header")
 				}
+			} else {
+				utils.Logger.Debug("Using token from cookie")
 			}
 
-			// If no token found, return unauthorized
+			// If no token found anywhere, return unauthorized
 			if token == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Authentication required")
+				utils.Logger.Warn("No authentication token found")
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"error": "Authentication required",
+				})
 			}
 
 			result, err := tokenManager.ValidateToken(token)
 			if err != nil {
 				utils.Logger.Errorf("Token validation error: %v", err)
-				return echo.NewHTTPError(http.StatusInternalServerError, "Token validation failed")
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"error": "Token validation failed",
+				})
 			}
 
 			if !result.Valid {
 				if result.Expired {
-					return echo.NewHTTPError(http.StatusUnauthorized, "Token has expired")
+					// Clear cookies on expired token
+					cookieConfig := GetCookieConfigForContext(c)
+					ClearAuthCookies(c, cookieConfig)
+					
+					return c.JSON(http.StatusUnauthorized, map[string]string{
+						"error": "Token has expired",
+						"code":  "TOKEN_EXPIRED",
+					})
 				}
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid or expired token")
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"error": "Invalid or expired token",
+				})
 			}
 
 			// Validate token type
 			if result.Claims.TokenType != "access" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token type")
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"error": "Invalid token type",
+				})
 			}
 
 			// Set user context
@@ -240,6 +253,7 @@ func AuthenticationMiddleware(config *Config, db *sql.DB) echo.MiddlewareFunc {
 			c.Set("session_id", result.Claims.SessionID)
 			c.Set("user_claims", result.Claims)
 
+			utils.Logger.Debugf("Authentication successful for user: %s", result.Claims.UserID)
 			return next(c)
 		}
 	}
@@ -273,11 +287,23 @@ func TimeoutMiddleware(timeout time.Duration) echo.MiddlewareFunc {
 func AuditMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := c.Request()
-
+		path := req.URL.Path
 		// Log authentication attempts
 		if strings.Contains(req.URL.Path, "/auth/login") {
 			utils.Logger.Infof("Login attempt from IP: %s, User-Agent: %s",
 				c.RealIP(), req.UserAgent())
+		}
+				// Log registration attempts
+		if strings.Contains(path, "/register") {
+			utils.Logger.Infof("Registration attempt from IP: %s", c.RealIP())
+		}
+				// Log upload attempts
+		if strings.Contains(path, "/upload") {
+			userID := "anonymous"
+			if uid, ok := c.Get("user_id").(uuid.UUID); ok {
+				userID = uid.String()
+			}
+			utils.Logger.Infof("Upload attempt from user: %s, IP: %s", userID, c.RealIP())
 		}
 
 		err := next(c)

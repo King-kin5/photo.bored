@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,137 +5,248 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feed - PhotoBored</title>
     <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/Feed.css">
 </head>
 <body>
+    <!-- Scroll progress indicator -->
+    <div class="scroll-indicator" id="scroll-indicator"></div>
+    
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+
     <div class="container">
-        <div class="header">
+        <header class="header">
             <a href="/feed" class="logo">PhotoBored</a>
             <div class="nav-links">
                 <a href="/photo">Upload</a>
                 <a href="#" id="logout-btn">Logout</a>
             </div>
-        </div>
+        </header>
 
-        <div class="feed-container" id="feed-container">
-            <!-- Feed items will be dynamically inserted here -->
-        </div>
+        <!-- Feed Type Selector (will be dynamically created by JavaScript) -->
+        <div id="feed-selector" class="feed-selector"></div>
+
+        <main class="feed-container" id="feed-container">
+            <!-- Feed items will be dynamically loaded here -->
+        </main>
 
         <div class="loading-spinner" id="loading-spinner">
-            <p>Loading...</p>
+            <div class="spinner-animation"></div>
+            <p>Loading more amazing photos...</p>
         </div>
+        
+        <!-- Intersection observer element for infinite scroll -->
         <div class="intersection-observer" id="intersection-observer"></div>
     </div>
 
-    <script>
-        let page = 1;
-        let loading = false;
-        let hasMore = true;
+    <!-- Ultra-modern upload button -->
+    <button class="upload-fab" id="upload-fab" title="Create new post">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12 0 6.628 5.373 12 12 12s12-5.372 12-12c0-6.627-5.373-12-12-12zm6 13h-5v5h-2v-5h-5v-2h5v-5h2v5h5v2z"/>
+        </svg>
+    </button>
 
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !loading && hasMore) {
-                loadMorePosts();
-            }
-        }, { threshold: 0.1 });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('accessToken');
-            if (!token) {
-                window.location.href = '/login_page';
-                return;
-            }
-
-            loadInitialPosts();
-            observer.observe(document.getElementById('intersection-observer'));
-            setupWebSocket();
-        });
-
-        document.getElementById('logout-btn').addEventListener('click', logout);
-
-        function setupWebSocket() {
-            const ws = new WebSocket(`ws://${window.location.host}/ws/feed`);
+    <!-- Premium Upload Modal -->
+    <div class="upload-modal" id="upload-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Post</h3>
+                <button class="close-btn" id="close-modal" type="button" aria-label="Close modal">&times;</button>
+            </div>
             
-            ws.onmessage = (event) => {
-                const newPost = JSON.parse(event.data);
-                prependPost(newPost);
-            };
-
-            ws.onclose = () => {
-                setTimeout(setupWebSocket, 3000);
-            };
-        }
-
-        async function loadInitialPosts() {
-            page = 1;
-            const posts = await fetchPosts(page);
-            document.getElementById('feed-container').innerHTML = '';
-            posts.forEach(post => appendPost(post));
-        }
-
-        async function loadMorePosts() {
-            if (loading || !hasMore) return;
-            
-            loading = true;
-            document.getElementById('loading-spinner').style.display = 'block';
-            
-            const posts = await fetchPosts(++page);
-            posts.forEach(post => appendPost(post));
-            
-            loading = false;
-            document.getElementById('loading-spinner').style.display = 'none';
-            
-            if (posts.length < 10) {
-                hasMore = false;
-            }
-        }
-
-        async function fetchPosts(page) {
-            const token = localStorage.getItem('accessToken');
-            try {
-                const response = await fetch(`/api/feed?page=${page}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.status === 401) {
-                    window.location.href = '/login_page';
-                    return [];
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching posts:', error);
-                return [];
-            }
-        }
-
-        function appendPost(post) {
-            const postElement = createPostElement(post);
-            document.getElementById('feed-container').appendChild(postElement);
-        }
-
-        function prependPost(post) {
-            const postElement = createPostElement(post);
-            document.getElementById('feed-container').prepend(postElement);
-        }
-
-        function createPostElement(post) {
-            const div = document.createElement('div');
-            div.className = 'feed-item';
-            div.innerHTML = `
-                <img src="/serveimage/${post.filename}" alt="Post">
-                <div class="feed-item-content">
-                    <h3>${post.username || 'Unknown User'}</h3>
-                    <p>${post.caption || ''}</p>
+            <div class="upload-options">
+                <div class="upload-option" id="go-to-upload" role="button" tabindex="0">
+                    <div class="upload-option-icon">🎨</div>
+                    <div class="upload-option-content">
+                        <strong>Professional Upload</strong>
+                        <p>Multi-photo uploads with advanced editing options</p>
+                    </div>
                 </div>
-            `;
-            return div;
+                
+                <div class="upload-divider">
+                    <span>or</span>
+                </div>
+                
+                <div class="quick-upload-area" id="quick-upload-area" role="button" tabindex="0">
+                    <div class="quick-upload-icon">⚡</div>
+                    <div class="quick-upload-content">
+                        <p><strong>Quick Share</strong></p>
+                        <p>Drag & drop or click to share instantly</p>
+                    </div>
+                    <input type="file" id="quick-file-input" accept="image/*" class="hidden" aria-label="Select image file">
+                </div>
+            </div>
+            
+            <div id="quick-preview" class="quick-preview-hidden">
+                <img id="preview-image" class="image-preview" alt="Preview of selected image">
+                <div class="caption-container">
+                    <textarea 
+                        id="caption-input" 
+                        class="caption-input" 
+                        placeholder="What's the story behind this photo?"
+                        rows="3"
+                        maxlength="500"
+                        aria-label="Photo caption"
+                    ></textarea>
+                    <div class="caption-counter">
+                        <span id="caption-count">0</span>/500
+                    </div>
+                </div>
+                <button id="quick-upload-btn" class="upload-btn" type="button">
+                    <span class="btn-text">Share to Feed</span>
+                    <div class="btn-spinner" style="display: none;"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div id="toast-container" aria-live="polite"></div>
+
+    <!-- Login prompt for unauthenticated users (will be dynamically created) -->
+    <div id="login-prompt-container"></div>
+
+    <!-- Loading states and animations -->
+    <style>
+        .spinner-animation {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
         }
 
-        function logout() {
-            localStorage.removeItem('accessToken');
-            window.location.href = '/login_page';
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-    </script>
+
+        .btn-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-left-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        .upload-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-align: left;
+        }
+
+        .upload-option-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .upload-option-content {
+            flex: 1;
+        }
+
+        .upload-option-content p {
+            margin: 4px 0 0 0;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .quick-upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .quick-upload-content {
+            text-align: center;
+        }
+
+        .quick-upload-content p {
+            margin: 4px 0;
+        }
+
+        .caption-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .caption-counter {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .caption-input {
+            padding-right: 60px;
+        }
+
+        .upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-btn:disabled .btn-text {
+            opacity: 0.7;
+        }
+
+        /* Accessibility improvements */
+        .upload-option:focus,
+        .quick-upload-area:focus {
+            outline: 2px solid var(--info-color);
+            outline-offset: 2px;
+        }
+
+        /* Enhanced toast positioning for mobile */
+        @media (max-width: 768px) {
+            #toast-container {
+                top: 80px;
+                right: 15px;
+                left: 15px;
+            }
+
+            .toast {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+
+        /* Feed selector placeholder styles (enhanced by JS) */
+        .feed-selector {
+            margin-bottom: 20px;
+        }
+
+        /* Initial loading state for empty feed */
+        .feed-container:empty::after {
+            content: "Loading your feed...";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+        }
+    </style>
+
+    <script src="/static/feed.js"></script>
 </body>
 </html>

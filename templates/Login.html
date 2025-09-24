@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,42 +13,13 @@
             <form id="loginForm">
                 <input type="email" id="email" name="email" placeholder="Email" required>
                 <input type="password" id="password" name="password" placeholder="Password" required>
-                <button type="submit">Log In</button>
+                <button type="submit" id="submit-btn">Log In</button>
             </form>
             <div id="login-result"></div>
             <p>Don't have an account? <a href="/registration">Sign up</a></p>
         </div>
     </div>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    localStorage.setItem('accessToken', data.tokens.access_token);
-                    localStorage.setItem('refreshToken', data.tokens.refresh_token);
-                    window.location.href = '/feed';
-                } else {
-                    document.getElementById('login-result').innerHTML = data.message || "Login failed";
-                }
-            } catch (error) {
-                document.getElementById('login-result').innerHTML = "An error occurred. Please try again.";
-                console.error('Login error:', error);
-            }
-        });
-    </script>
+    <script src="/static/login.js"></script>
 </body>
 </html>

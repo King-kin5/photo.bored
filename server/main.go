@@ -1,3 +1,4 @@
+// FIXED: Complete main.go integration
 package main
 
 import (
@@ -8,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
+
 	"syscall"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	utils "app/pkg/utils"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -49,15 +51,7 @@ func main() {
 	// Create Echo instance
 	e := echo.New()
 
-	// Add request logging middleware
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			utils.Logger.Infof("Incoming request: %s %s", c.Request().Method, c.Request().URL.Path)
-			return next(c)
-		}
-	})
-
-	// Load configuration
+	// Load configuration first
 	appConfig, err := configs.LoadConfig()
 	if err != nil {
 		utils.Logger.Fatalf("Failed to load configuration: %v", err)
@@ -70,22 +64,30 @@ func main() {
 	// Create security config
 	securityConfig := security.NewConfig()
 
-	// Initialize security middleware
+	// Initialize security middleware BEFORE other middleware
 	securityMiddlewareConfig := security.DefaultSecurityConfig()
 	security.SetupSecurityMiddleware(e, securityConfig, securityMiddlewareConfig)
 
-	// Add custom middleware
+	// Add custom middleware in correct order
 	e.Use(security.LoggingMiddleware)
 	e.Use(security.AuditMiddleware)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	// Add request logging middleware
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			utils.Logger.Debugf("Incoming request: %s %s", c.Request().Method, c.Request().URL.Path)
+			return next(c)
+		}
+	})
 
 	// Set up validator
 	e.Validator = &CustomValidator{validator: validator.New()}
 
 	// Set up template renderer
 	renderer := &TemplateRenderer{
-		templates: template.Must(template.ParseGlob("templates/*.html")),
+		templates: template.Must(template.ParseGlob("../templates/*.html")),
 	}
 	e.Renderer = renderer
 
@@ -95,6 +97,12 @@ func main() {
 		utils.Logger.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
 	defer postgresDB.Close()
+
+	// Test database connection
+	if err := postgresDB.Ping(); err != nil {
+		utils.Logger.Fatalf("Database connection test failed: %v", err)
+	}
+	utils.Logger.Info("Database connection established")
 
 	// Initialize WebSocket manager
 	wsManager := photo.NewWebSocketManager()
@@ -114,15 +122,17 @@ func main() {
 	userHandler := Auth.NewHandler(userStore, securityConfig, emailService, postgresDB)
 	photoModel := photo.NewModel(photoStore, wsManager)
 
-	// Setup routes
+	// Setup routes in correct order
 	setupPublicRoutes(e, userHandler, photoModel)
-	setupProtectedRoutes(e, securityConfig, photoModel, postgresDB)
+	setupProtectedRoutes(e, securityConfig, photoModel, postgresDB, userHandler)
 	setupWebSocketRoutes(e, wsManager)
 
 	// Print all registered routes for debugging
+	utils.Logger.Info("=== Registered Routes ===")
 	for _, route := range e.Routes() {
-		utils.Logger.Infof("Registered route: %s %s", route.Method, route.Path)
+		utils.Logger.Infof("Route: %s %s", route.Method, route.Path)
 	}
+	utils.Logger.Info("========================")
 
 	// Health check endpoint
 	e.GET("/health", func(c echo.Context) error {
@@ -161,10 +171,10 @@ func main() {
 	utils.Logger.Info("Server shutdown complete")
 }
 
-// setupPublicRoutes configures public routes that don't require authentication
+// FIXED: setupPublicRoutes with public feed endpoint
 func setupPublicRoutes(e *echo.Echo, userHandler *Auth.Handler, photoModel *photo.Model) {
 	// Serve static files
-	e.Static("/static", "static")
+	e.Static("/static", "../static")
 
 	// Template routes
 	e.GET("/registration", func(c echo.Context) error {
@@ -175,64 +185,91 @@ func setupPublicRoutes(e *echo.Echo, userHandler *Auth.Handler, photoModel *phot
 		return c.Render(http.StatusOK, "Login.html", nil)
 	})
 
-	// Public photo viewing route
-	e.GET("/serveimage/:filename", photoModel.HandleServeImage)
-
-	// Public feed endpoint
 	e.GET("/feed", func(c echo.Context) error {
-		pageStr := c.QueryParam("page")
-		page, err := strconv.Atoi(pageStr)
-		if err != nil || page < 1 {
-			page = 1
-		}
-
-		const itemsPerPage = 100
-		offset := (page - 1) * itemsPerPage
-
-		photos, err := photoModel.GetPaginatedPhotos(itemsPerPage, offset)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"error": "Failed to load photos",
-			})
-		}
-
-		// Ensure photos have valid dates
-		for i := range photos {
-			if photos[i].Date.IsZero() {
-				photos[i].Date = time.Now()
-			}
-		}
-
-		return c.JSON(http.StatusOK, photos)
+		return c.Render(http.StatusOK, "Feed.html", nil)
 	})
 
-	// Authentication API routes
-	auth := e.Group("/api/v1/auth")
-	auth.POST("/register", userHandler.RegisterUser)
-	auth.POST("/login", userHandler.LoginUser)
-	auth.POST("/refresh-token", userHandler.RefreshToken)
-	auth.POST("/logout", userHandler.LogoutUser)
+	e.GET("/photo", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "photo.html", nil)
+	})
+
+	// FIXED: Public photo viewing route (no auth required)
+	e.GET("/serveimage/:filename", photoModel.HandleServeImage)
+
+	// FIXED: Public API endpoint for feed data
+		// IMPROVED: Infinite scroll feed endpoint
+	e.GET("/api/feed/infinite", photoModel.GetInfiniteFeed)
+	
+	// Keep the old endpoint for backward compatibility
+	e.GET("/api/feed", func(c echo.Context) error {
+		// Legacy pagination endpoint - redirect to infinite scroll
+		return photoModel.GetInfiniteFeed(c)
+	})
+
+	// Authentication API routes (public)
+	e.POST("/api/register", userHandler.RegisterUser)
+	e.POST("/api/login", userHandler.LoginUser)
 
 	utils.Logger.Info("Public routes configured")
 }
 
-// setupProtectedRoutes configures routes that require authentication
-func setupProtectedRoutes(e *echo.Echo, config *security.Config, photoModel *photo.Model, db *sql.DB) {
+// FIXED: setupProtectedRoutes with proper authentication
+func setupProtectedRoutes(e *echo.Echo, config *security.Config, photoModel *photo.Model, db *sql.DB, userHandler *Auth.Handler) {
 	// Create the protected group with authentication middleware
-	api := e.Group("/api/v1")
+	api := e.Group("/api")
+	
+	// Add debug middleware for protected routes
+	api.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			utils.Logger.Debugf("Protected route accessed: %s %s", c.Request().Method, c.Request().URL.Path)
+			return next(c)
+		}
+	})
+	
+	// Apply authentication middleware to all protected routes
 	api.Use(security.AuthenticationMiddleware(config, db))
 
-	// Protected photo template route
-	api.GET("/photo", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "photo.html", nil)
+	// User profile routes
+	api.GET("/user/profile/:id", userHandler.Profile)
+	api.GET("/user/profile", func(c echo.Context) error {
+		userID, ok := c.Get("user_id").(uuid.UUID)
+		if !ok {
+			return c.JSON(http.StatusUnauthorized, map[string]string{
+				"error": "User not authenticated",
+			})
+		}
+		c.SetParamNames("id")
+		c.SetParamValues(userID.String())
+		return userHandler.Profile(c)
+	})
+	api.PUT("/user/profile/:id", userHandler.UpdateUser)
+	api.GET("/user/username/:username", userHandler.GetProfileByUsername)
+	
+	// Authentication routes that require being logged in
+	api.POST("/logout", userHandler.LogoutUser)
+	api.POST("/refresh", userHandler.RefreshToken)
+
+	// FIXED: Photo upload endpoint with enhanced logging
+	api.POST("/upload", func(c echo.Context) error {
+		utils.Logger.Info("Upload endpoint accessed")
+		
+		// Additional validation
+		userID, ok := c.Get("user_id").(uuid.UUID)
+		if !ok {
+			utils.Logger.Error("Upload attempted without valid user context")
+			return c.JSON(http.StatusUnauthorized, map[string]string{
+				"error": "User authentication required for upload",
+			})
+		}
+		
+		utils.Logger.Infof("Processing upload for user: %s", userID)
+		return photoModel.HandleUpload(c)
 	})
 
-	// Protected photo operations
-	photos := api.Group("/photos")
-	photos.POST("/upload", photoModel.HandleUpload)
-	photos.DELETE("/delete/:filename", photoModel.HandleDeleteImage)
-	photos.POST("/caption/:filename", photoModel.HandleCaption)
-	photos.GET("/:photoId/comments", photoModel.GetPhotoComments)
+	// Other protected photo operations
+	api.DELETE("/photos/delete/:filename", photoModel.HandleDeleteImage)
+	api.POST("/photos/caption/:filename", photoModel.HandleCaption)
+	api.GET("/photos/:photoId/comments", photoModel.GetPhotoComments)
 
 	// Protected album operations
 	albums := api.Group("/albums")
@@ -244,6 +281,6 @@ func setupProtectedRoutes(e *echo.Echo, config *security.Config, photoModel *pho
 
 // setupWebSocketRoutes configures WebSocket routes
 func setupWebSocketRoutes(e *echo.Echo, wsManager *photo.WebSocketManager) {
-	e.GET("/ws", wsManager.HandleWebSocket)
+	e.GET("/ws/feed", wsManager.HandleWebSocket)
 	utils.Logger.Info("WebSocket routes configured")
 }
