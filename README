@@ -17,3 +17,13 @@ go build
 #  antigoals
 - distractive
 - ads
+
+# Missing Features
+
+- **Likes**: The ability for users to "like" a photo.
+- **Following Users**: A social graph where users can follow each other.
+- **Personalized Feed**: A feed that only shows photos from users that are being followed.
+- **User Profiles**: Public user profiles that display a user's photos, follower/following counts, and a profile picture.
+- **Activity Feed**: A notification system for likes, comments, and new followers.
+- **Photo Filters**: The iconic photo filters.
+- **Search**: The ability to search for users.
