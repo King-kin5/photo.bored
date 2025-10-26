@@ -16,8 +16,10 @@ import (
 	database "app/Database"
 	configs "app/configs"
 	Auth "app/internal/Auth"
-	"app/internal/security"
+	"app/Internal/security"
 	"app/photo"
+
+	
 	utils "app/pkg/utils"
 
 	"github.com/go-playground/validator/v10"
@@ -266,12 +268,18 @@ func setupProtectedRoutes(e *echo.Echo, config *security.Config, photoModel *pho
 		return photoModel.HandleUpload(c)
 	})
 
-	// Other protected photo operations
-	api.DELETE("/photos/delete/:filename", photoModel.HandleDeleteImage)
-	api.POST("/photos/caption/:filename", photoModel.HandleCaption)
-	api.GET("/photos/:photoId/comments", photoModel.GetPhotoComments)
-
-	// Protected album operations
+	    // Other protected photo operations
+		api.DELETE("/photos/delete/:filename", photoModel.HandleDeleteImage)
+		api.POST("/photos/caption/:filename", photoModel.HandleCaption)
+		api.GET("/photos/:photoId/comments", photoModel.GetPhotoComments)
+	
+		// Like and unlike photos
+		api.POST("/photos/like/:photo_id", photoModel.HandleLikePhoto)
+			api.POST("/photos/unlike/:photo_id", photoModel.HandleUnlikePhoto)
+			api.GET("/photos/likes/:photo_id", photoModel.HandleGetLikesCount)
+			api.GET("/photos/liked", photoModel.HandleGetLikedPhotos)
+		
+		// Protected album operations
 	albums := api.Group("/albums")
 	albums.POST("", photoModel.HandleCreateAlbum)
 	albums.POST("/photo", photoModel.HandleAddPhotoToAlbum)

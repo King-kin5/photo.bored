@@ -702,30 +702,251 @@ func (m *Model) GetInfiniteFeed(c echo.Context) error {
 }
 
 // Transform photos for infinite scroll response format (matches feed.js expectations)
+
 func transformPhotosForInfiniteScroll(photos []PhotoWithUser) []map[string]interface{} {
+
 	var response []map[string]interface{}
+
 	for _, photo := range photos {
+
 		filename := photo.Filename
+
 		if filename == "" || filename == "undefined" || filename == "null" {
+
 			utils.Logger.Warnf("Skipping photo %s with invalid filename: '%s'", photo.PhotoID.String(), filename)
+
 			continue
+
 		}
+
 		
+
 		photoData := map[string]interface{}{
+
 			"photo_id":       photo.PhotoID,
+
 			"filename":       filename,
+
 			"date":          photo.Date.Format(time.RFC3339),
+
 			"created_at":    photo.Date.Format(time.RFC3339),
+
 			"location":      photo.Location,
+
 			"caption":       photo.Caption,
+
 			"user_id":       photo.UserID,
+
 			"username":      photo.Username,
+
 			"likes_count":   photo.LikesCount,
+
 			"comments_count": photo.CommentsCount,
+
 			"image_url":     fmt.Sprintf("/serveimage/%s", filename),
+
 			"timestamp":     photo.Date.Unix(),
+
 		}
+
 		response = append(response, photoData)
+
 	}
+
 	return response
+
 }
+
+
+
+// HandleLikePhoto handles liking a photo
+
+func (m *Model) HandleLikePhoto(c echo.Context) error {
+
+	photoID, err := uuid.Parse(c.Param("photo_id"))
+
+	if err != nil {
+
+		return c.JSON(http.StatusBadRequest, map[string]string{
+
+			"error": "Invalid photo ID",
+
+		})
+
+	}
+
+
+
+	userID, ok := c.Get("user_id").(uuid.UUID)
+
+	if !ok {
+
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+
+			"error": "User not authenticated",
+
+		})
+
+	}
+
+
+
+	err = m.store.AddLike(photoID, userID)
+
+	if err != nil {
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+
+			"error": "Failed to like photo",
+
+		})
+
+	}
+
+
+
+	return c.JSON(http.StatusOK, map[string]string{
+
+		"message": "Photo liked successfully",
+
+	})
+
+}
+
+
+
+// HandleUnlikePhoto handles unliking a photo
+
+func (m *Model) HandleUnlikePhoto(c echo.Context) error {
+
+	photoID, err := uuid.Parse(c.Param("photo_id"))
+
+	if err != nil {
+
+		return c.JSON(http.StatusBadRequest, map[string]string{
+
+			"error": "Invalid photo ID",
+
+		})
+
+	}
+
+
+
+	userID, ok := c.Get("user_id").(uuid.UUID)
+
+	if !ok {
+
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+
+			"error": "User not authenticated",
+
+		})
+
+	}
+
+
+
+	err = m.store.RemoveLike(photoID, userID)
+
+	if err != nil {
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+
+			"error": "Failed to unlike photo",
+
+		})
+
+	}
+
+
+
+	return c.JSON(http.StatusOK, map[string]string{
+
+		"message": "Photo unliked successfully",
+
+	})
+
+}
+
+
+
+// HandleGetLikesCount handles getting the number of likes for a photo
+
+func (m *Model) HandleGetLikesCount(c echo.Context) error {
+
+	photoID, err := uuid.Parse(c.Param("photo_id"))
+
+	if err != nil {
+
+		return c.JSON(http.StatusBadRequest, map[string]string{
+
+			"error": "Invalid photo ID",
+
+		})
+
+	}
+
+
+
+	count, err := m.store.GetLikesCount(photoID)
+
+	if err != nil {
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+
+			"error": "Failed to get likes count",
+
+		})
+
+	}
+
+
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+
+		"likes_count": count,
+
+	})
+
+}
+
+
+
+// HandleGetLikedPhotos handles getting the photos that the current user has liked
+
+func (m *Model) HandleGetLikedPhotos(c echo.Context) error {
+
+	userID, ok := c.Get("user_id").(uuid.UUID)
+
+	if !ok {
+
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+
+			"error": "User not authenticated",
+
+		})
+
+	}
+
+
+
+	photos, err := m.store.GetLikedPhotos(userID)
+
+	if err != nil {
+
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+
+			"error": "Failed to get liked photos",
+
+		})
+
+	}
+
+
+
+	return c.JSON(http.StatusOK, photos)
+
+}
+
+

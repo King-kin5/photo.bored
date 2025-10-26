@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	security "app/internal/security"
+	security "app/Internal/security"
 
 	utils "app/pkg/utils"
 	"github.com/google/uuid"

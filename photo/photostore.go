@@ -487,6 +487,73 @@ func (s *Photostore) GetUserPersonalFeedInfinite(userID uuid.UUID, limit int, cu
     return photos, lastDate, nil
 }
 
+func (ps *Photostore) AddLike(photoID uuid.UUID, userID uuid.UUID) error {
+	// Check if the user has already liked the photo
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM likes WHERE photo_id = $1 AND user_id = $2)`
+	err := ps.db.QueryRow(query, photoID, userID).Scan(&exists)
+	if err != nil {
+		log.Printf("Error checking if like exists: %v", err)
+		return err
+	}
+
+	// If the like already exists, do nothing
+	if exists {
+		return nil
+	}
+
+	// Otherwise, insert a new like
+	query = `INSERT INTO likes (photo_id, user_id) VALUES ($1, $2)`
+	_, err = ps.db.Exec(query, photoID, userID)
+	if err != nil {
+		log.Printf("Error adding like: %v", err)
+	}
+	return err
+}
+
+func (ps *Photostore) RemoveLike(photoID uuid.UUID, userID uuid.UUID) error {
+	query := `DELETE FROM likes WHERE photo_id = $1 AND user_id = $2`
+	_, err := ps.db.Exec(query, photoID, userID)
+	if err != nil {
+		log.Printf("Error removing like: %v", err)
+	}
+	return err
+}
+
+func (ps *Photostore) GetLikesCount(photoID uuid.UUID) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM likes WHERE photo_id = $1`
+	err := ps.db.QueryRow(query, photoID).Scan(&count)
+	if err != nil {
+		log.Printf("Error getting likes count: %v", err)
+		return 0, err
+	}
+	return count, nil
+}
+
+// GetLikedPhotos returns a list of photo IDs that the user has liked
+func (ps *Photostore) GetLikedPhotos(userID uuid.UUID) ([]uuid.UUID, error) {
+	query := `SELECT photo_id FROM likes WHERE user_id = $1`
+	rows, err := ps.db.Query(query, userID)
+	if err != nil {
+		log.Printf("Error getting liked photos: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var photoIDs []uuid.UUID
+	for rows.Next() {
+		var photoID uuid.UUID
+		if err := rows.Scan(&photoID); err != nil {
+			log.Printf("Error scanning liked photo: %v", err)
+			continue
+		}
+		photoIDs = append(photoIDs, photoID)
+	}
+
+	return photoIDs, nil
+}
+
 func (s *Photostore) GetFollowingFeedInfinite(userID uuid.UUID, limit int, cursor *time.Time) ([]PhotoWithUser, *time.Time, error) {
     query := `
         SELECT 

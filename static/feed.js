@@ -12,6 +12,7 @@ class FeedManager {
         this.websocket = null;
         this.retryCount = 0;
         this.maxRetries = 3;
+        this.likedPhotos = [];
         
         this.FEED_TYPES = {
             public: { 
@@ -58,6 +59,7 @@ class FeedManager {
     async onDOMContentLoaded() {
         this.feedContainer = document.getElementById('feed-container');
         await this.checkAuthentication();
+        await this.fetchLikedPhotos();
         this.setupIntersectionObserver();
         this.createParticles();
         this.setupScrollIndicator();
@@ -67,6 +69,29 @@ class FeedManager {
         this.setupWebSocket();
         this.setupUploadModal();
         this.setupEventListeners();
+    }
+
+    async fetchLikedPhotos() {
+        if (!this.isAuthenticated) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/photos/liked', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                this.likedPhotos = await response.json();
+            }
+        } catch (error) {
+            console.error('Failed to fetch liked photos:', error);
+        }
     }
 
     async checkAuthentication() {
@@ -446,6 +471,8 @@ class FeedManager {
         
         const timeAgo = this.formatTimeAgo(post.created_at || post.date);
         const imageUrl = `/serveimage/${encodeURIComponent(post.filename)}`;
+        const isLiked = this.likedPhotos && this.likedPhotos.includes(post.photo_id);
+        const likeButtonClass = isLiked ? 'like-btn-main liked' : 'like-btn-main';
         
         div.innerHTML = `
             <div class="post-header">
@@ -468,7 +495,7 @@ class FeedManager {
             </div>
             
             <div class="post-image-container">
-                <img src="${imageUrl}" 
+                <img data-src="${imageUrl}" 
                      alt="Post by ${this.escapeHtml(post.username || 'Anonymous')}" 
                      loading="lazy">
                 <div class="image-error" style="display: none; justify-content: center; align-items: center; height: 300px; background: #333; color: #fff; border-radius: 8px;">
@@ -488,7 +515,7 @@ class FeedManager {
             
             <div class="post-content">
                 <div class="post-actions">
-                    <button class="action-btn like-btn-main" data-post-id="${post.photo_id}">
+                    <button class="${likeButtonClass}" data-post-id="${post.photo_id}">
                         <svg viewBox="0 0 24 24" width="24" height="24">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                         </svg>
@@ -549,62 +576,66 @@ class FeedManager {
     }
 
     toggleLike(button, postId) {
-        // Visual feedback first (optimistic update)
         const wasLiked = button.classList.contains('liked');
-        button.classList.toggle('liked');
-        
+        // Optimistically update the UI
+        this.updateLikeStatus(button, !wasLiked);
+
+        this.sendLike(postId, !wasLiked)
+            .then(success => {
+                if (!success) {
+                    // If the request fails, revert the UI changes
+                    this.updateLikeStatus(button, wasLiked);
+                }
+            });
+    }
+
+    updateLikeStatus(button, isLiked) {
+        button.classList.toggle('liked', isLiked);
         const heart = button.querySelector('.heart-icon, svg');
         if (heart) {
             heart.style.transform = 'scale(1.3)';
-            
-            if (button.classList.contains('liked')) {
+            if (isLiked) {
                 heart.style.color = '#ef4444';
                 heart.style.fill = '#ef4444';
             } else {
                 heart.style.color = '';
                 heart.style.fill = '';
             }
-            
             setTimeout(() => {
                 heart.style.transform = '';
             }, 200);
         }
-        
+
         const likesCount = button.querySelector('.likes-count');
         if (likesCount) {
             const currentCount = parseInt(likesCount.textContent) || 0;
-            likesCount.textContent = button.classList.contains('liked') ? 
-                currentCount + 1 : Math.max(0, currentCount - 1);
+            likesCount.textContent = isLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
         }
-        
-        // Attempt to send like to server (but don't revert on failure since endpoint doesn't exist)
-        this.sendLike(postId, button.classList.contains('liked'), button, wasLiked);
     }
 
-    async sendLike(postId, isLiked, button, wasLiked) {
+    async sendLike(postId, isLiked) {
+        const url = isLiked ? `/api/photos/like/${postId}` : `/api/photos/unlike/${postId}`;
+        const method = 'POST';
+
         try {
-            const response = await fetch(`/api/photos/${postId}/like`, {
-                method: isLiked ? 'POST' : 'DELETE',
+            const response = await fetch(url, {
+                method: method,
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-            
-            if (response.status === 404) {
-                console.log('Like functionality not implemented yet - keeping visual state');
-                // Don't show error to user since visual feedback already happened
-                return;
-            }
-            
+
             if (!response.ok) {
                 console.error('Failed to update like status:', response.status);
-                // Could revert visual state here if needed
                 this.showToast('Could not save like status', 'warning');
+                return false;
             }
+            return true;
         } catch (error) {
             console.error('Error updating like:', error);
-            // Don't show error for network issues with likes
+            this.showToast('Could not save like status', 'warning');
+            return false;
         }
     }
 
